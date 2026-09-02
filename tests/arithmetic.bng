@@ -1,0 +1,6 @@
+dhoro purno x = 10;
+dhoro purno y = 20;
+
+x = x + y * 2;
+
+dekhao(x);
