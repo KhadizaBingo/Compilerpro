@@ -15,7 +15,7 @@ class Lexer
 private:
 
     // Complete source code
-    string source;
+   std::string source;
 
     // Current position in source
     int position;
