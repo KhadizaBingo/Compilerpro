@@ -3,7 +3,7 @@
 
 using namespace std;
 
-// ---------------- Constructor ----------------
+//Constructor
 
 SemanticAnalyzer::SemanticAnalyzer(vector<Token> tokens)
 {
@@ -11,7 +11,7 @@ SemanticAnalyzer::SemanticAnalyzer(vector<Token> tokens)
     this->current = 0;
 }
 
-// ---------------- Token helpers ----------------
+// Token helpers 
 
 bool SemanticAnalyzer::isAtEnd()
 {
@@ -52,7 +52,7 @@ bool SemanticAnalyzer::match(TokenType type)
     return false;
 }
 
-// ---------------- Type helpers ----------------
+// Type helpers 
 
 DataType SemanticAnalyzer::tokenToDataType(TokenType type)
 {
@@ -75,7 +75,7 @@ void SemanticAnalyzer::error(Token token, string message)
          << endl;
 }
 
-// ---------------- Entry point ----------------
+//  Entry point
 
 void SemanticAnalyzer::analyze()
 {
@@ -91,7 +91,7 @@ void SemanticAnalyzer::program()
     }
 }
 
-// ---------------- Statements ----------------
+// Statements 
 
 void SemanticAnalyzer::statement()
 {
@@ -255,7 +255,7 @@ void SemanticAnalyzer::ifStatement()
     }
 }
 
-// jotokkhon ( expression ) { ... }
+// jotokkhon ( expression )
 void SemanticAnalyzer::whileStatement()
 {
     advance(); // consume 'jotokkhon'
