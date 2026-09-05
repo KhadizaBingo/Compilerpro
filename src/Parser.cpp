@@ -2,7 +2,7 @@
 #include <iostream>
 
 using namespace std;
-
+//constructor
 Parser::Parser(vector<Token> tokens)
 {
     this->tokens = tokens;
@@ -13,7 +13,7 @@ bool Parser::isAtEnd()
 {
     return peek().type == TokenType::END_OF_FILE;
 }
-
+//check current token
 Token Parser::peek()
 {
     return tokens[current];
@@ -23,7 +23,7 @@ Token Parser::previous()
 {
     return tokens[current - 1];
 }
-
+//next token e jay
 Token Parser::advance()
 {
     if (!isAtEnd())
@@ -31,7 +31,7 @@ Token Parser::advance()
 
     return previous();
 }
-
+//milay token to token type
 bool Parser::check(TokenType type)
 {
     if (isAtEnd())
@@ -39,7 +39,7 @@ bool Parser::check(TokenType type)
 
     return peek().type == type;
 }
-
+//check if matches
 bool Parser::match(TokenType type)
 {
     if (!check(type))
@@ -79,7 +79,7 @@ void Parser::parse()
     cout << endl;
     cout << "Parsing completed." << endl;
 }
-
+//parse until end of full file
 void Parser::program()
 {
     while (!isAtEnd())
@@ -87,7 +87,7 @@ void Parser::program()
         statement();
     }
 }
-
+//check current token kun doroner
 void Parser::statement()
 {
     try
@@ -123,7 +123,7 @@ void Parser::statement()
         synchronize();
     }
 }
-
+//variable declearation syntext check kore
 void Parser::declaration()
 {
     // dhoro purno x = 10;
