@@ -11,7 +11,9 @@
 using namespace std;
 
 
-
+// ============================================================
+//  Expressions
+// ============================================================
 
 // Base class for every expression node (numbers, strings,
 // variables, binary operations, parenthesized expressions).
@@ -77,7 +79,9 @@ public:
 };
 
 
-
+// ============================================================
+//  Statements
+// ============================================================
 
 // Base class for every statement node.
 class Stmt

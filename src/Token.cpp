@@ -1,6 +1,6 @@
 #include "Token.h"
 
-#include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -14,7 +14,7 @@ Token::Token()
 }
 
 
-// Constructor (function value boshanor jonno)
+// Constructor
 Token::Token(TokenType type, string value, int line)
 {
     this->type = type;

@@ -2,7 +2,7 @@
 #include <iostream>
 
 using namespace std;
-//constructor
+
 Parser::Parser(vector<Token> tokens)
 {
     this->tokens = tokens;
@@ -13,7 +13,7 @@ bool Parser::isAtEnd()
 {
     return peek().type == TokenType::END_OF_FILE;
 }
-//check current token
+
 Token Parser::peek()
 {
     return tokens[current];
@@ -23,7 +23,7 @@ Token Parser::previous()
 {
     return tokens[current - 1];
 }
-//next token e jay
+
 Token Parser::advance()
 {
     if (!isAtEnd())
@@ -31,7 +31,7 @@ Token Parser::advance()
 
     return previous();
 }
-//milay token to token type
+
 bool Parser::check(TokenType type)
 {
     if (isAtEnd())
@@ -39,7 +39,7 @@ bool Parser::check(TokenType type)
 
     return peek().type == type;
 }
-//check if matches
+
 bool Parser::match(TokenType type)
 {
     if (!check(type))
@@ -68,76 +68,90 @@ void Parser::error(Token token, string message)
          << endl;
 }
 
-void Parser::parse()
-{
-    cout << "     " << endl;
-    cout << "       BANG PARSER" << endl;
-    cout << "      " << endl;
+// ---------------- Entry point ----------------
 
-    program();
-
-    cout << endl;
-    cout << "Parsing completed." << endl;
-}
-//parse until end of full file
-void Parser::program()
+vector<StmtPtr> Parser::parse()
 {
+    vector<StmtPtr> statements;
+
     while (!isAtEnd())
     {
-        statement();
+        StmtPtr stmt = statement();
+
+        if (stmt)
+        {
+            statements.push_back(move(stmt));
+        }
     }
+
+    return statements;
 }
-//check current token kun doroner
-void Parser::statement()
+
+// ---------------- Statements ----------------
+
+StmtPtr Parser::statement()
 {
     try
     {
         if (match(TokenType::DHORO))
         {
-            declaration();
+            return declaration();
         }
         else if (match(TokenType::DEKHAO))
         {
-            printStatement();
+            return printStatement();
         }
         else if (match(TokenType::JODI))
         {
-            ifStatement();
+            return ifStatement();
         }
         else if (match(TokenType::JOTOKKHON))
         {
-            whileStatement();
+            return whileStatement();
+        }
+        else if (check(TokenType::LEFT_BRACE))
+        {
+            return block();
         }
         else if (check(TokenType::IDENTIFIER))
         {
-            assignment();
+            return assignment();
         }
         else
         {
             error(peek(), "Unexpected token.");
             synchronize();
+            return nullptr;
         }
     }
     catch (...)
     {
         synchronize();
+        return nullptr;
     }
 }
-//variable declearation syntext check kore
-void Parser::declaration()
-{
-    // dhoro purno x = 10;
-    // dhoro dosomik price = 25.5;
 
-    if (!match(TokenType::PURNO) &&
-        !match(TokenType::DOSOMIK))
+// dhoro (purno | dosomik) IDENTIFIER = expression ;
+StmtPtr Parser::declaration()
+{
+    TokenType declaredType;
+
+    if (match(TokenType::PURNO))
+    {
+        declaredType = TokenType::PURNO;
+    }
+    else if (match(TokenType::DOSOMIK))
+    {
+        declaredType = TokenType::DOSOMIK;
+    }
+    else
     {
         error(peek(), "Expected data type.");
         synchronize();
-        return;
+        return nullptr;
     }
 
-    consume(
+    Token name = consume(
         TokenType::IDENTIFIER,
         "Expected variable name."
     );
@@ -147,19 +161,20 @@ void Parser::declaration()
         "Expected '=' after variable name."
     );
 
-    expression();
+    ExprPtr initializer = expression();
 
     consume(
         TokenType::SEMICOLON,
         "Expected ';' after declaration."
     );
+
+    return make_unique<VarDeclStmt>(declaredType, name.value, move(initializer));
 }
 
-void Parser::assignment()
+// IDENTIFIER = expression ;
+StmtPtr Parser::assignment()
 {
-    // x = x + 5;
-
-    consume(
+    Token name = consume(
         TokenType::IDENTIFIER,
         "Expected variable name."
     );
@@ -169,24 +184,25 @@ void Parser::assignment()
         "Expected '=' after variable name."
     );
 
-    expression();
+    ExprPtr value = expression();
 
     consume(
         TokenType::SEMICOLON,
         "Expected ';' after assignment."
     );
+
+    return make_unique<AssignStmt>(name.value, move(value));
 }
 
-void Parser::printStatement()
+// dekhao ( expression ) ;
+StmtPtr Parser::printStatement()
 {
-    // dekhao(x);
-
     consume(
         TokenType::LEFT_PAREN,
         "Expected '(' after dekhao."
     );
 
-    expression();
+    ExprPtr value = expression();
 
     consume(
         TokenType::RIGHT_PAREN,
@@ -197,157 +213,171 @@ void Parser::printStatement()
         TokenType::SEMICOLON,
         "Expected ';' after dekhao statement."
     );
+
+    return make_unique<PrintStmt>(move(value));
 }
 
-void Parser::ifStatement()
+// { statement* }
+StmtPtr Parser::block()
 {
-    // jodi (x > 5) { ... }
+    consume(
+        TokenType::LEFT_BRACE,
+        "Expected '{' to start block."
+    );
 
+    vector<StmtPtr> statements;
+
+    while (!check(TokenType::RIGHT_BRACE) &&
+           !isAtEnd())
+    {
+        StmtPtr stmt = statement();
+
+        if (stmt)
+        {
+            statements.push_back(move(stmt));
+        }
+    }
+
+    consume(
+        TokenType::RIGHT_BRACE,
+        "Expected '}' after block."
+    );
+
+    return make_unique<BlockStmt>(move(statements));
+}
+
+// jodi ( expression ) { ... } (nahole { ... })?
+StmtPtr Parser::ifStatement()
+{
     consume(
         TokenType::LEFT_PAREN,
         "Expected '(' after jodi."
     );
 
-    expression();
+    ExprPtr condition = expression();
 
     consume(
         TokenType::RIGHT_PAREN,
         "Expected ')' after condition."
     );
 
-    consume(
-        TokenType::LEFT_BRACE,
-        "Expected '{' before if block."
-    );
-
-    while (!check(TokenType::RIGHT_BRACE) &&
-           !isAtEnd())
-    {
-        statement();
-    }
-
-    consume(
-        TokenType::RIGHT_BRACE,
-        "Expected '}' after if block."
-    );
+    StmtPtr thenBranch = block();
+    StmtPtr elseBranch = nullptr;
 
     // Optional nahole
     if (match(TokenType::NAHOLE))
     {
-        consume(
-            TokenType::LEFT_BRACE,
-            "Expected '{' before else block."
-        );
-
-        while (!check(TokenType::RIGHT_BRACE) &&
-               !isAtEnd())
-        {
-            statement();
-        }
-
-        consume(
-            TokenType::RIGHT_BRACE,
-            "Expected '}' after else block."
-        );
+        elseBranch = block();
     }
+
+    return make_unique<IfStmt>(move(condition), move(thenBranch), move(elseBranch));
 }
 
-void Parser::whileStatement()
+// jotokkhon ( expression ) { ... }
+StmtPtr Parser::whileStatement()
 {
-    // jotokkhon (x <= 10) { ... }
-
     consume(
         TokenType::LEFT_PAREN,
         "Expected '(' after jotokkhon."
     );
 
-    expression();
+    ExprPtr condition = expression();
 
     consume(
         TokenType::RIGHT_PAREN,
         "Expected ')' after condition."
     );
 
-    consume(
-        TokenType::LEFT_BRACE,
-        "Expected '{' before while block."
-    );
+    StmtPtr body = block();
 
-    while (!check(TokenType::RIGHT_BRACE) &&
-           !isAtEnd())
+    return make_unique<WhileStmt>(move(condition), move(body));
+}
+
+// ---------------- Expressions ----------------
+
+ExprPtr Parser::expression()
+{
+    return comparison();
+}
+
+ExprPtr Parser::comparison()
+{
+    ExprPtr expr = term();
+
+    while (check(TokenType::EQUAL) ||
+           check(TokenType::NOT_EQUAL) ||
+           check(TokenType::LESS) ||
+           check(TokenType::GREATER) ||
+           check(TokenType::LESS_EQUAL) ||
+           check(TokenType::GREATER_EQUAL))
     {
-        statement();
+        Token op = advance();
+        ExprPtr right = term();
+        expr = make_unique<BinaryExpr>(move(expr), op, move(right));
     }
 
-    consume(
-        TokenType::RIGHT_BRACE,
-        "Expected '}' after while block."
-    );
+    return expr;
 }
 
-void Parser::expression()
+ExprPtr Parser::term()
 {
-    comparison();
-}
+    ExprPtr expr = factor();
 
-void Parser::comparison()
-{
-    term();
-
-    while (match(TokenType::EQUAL) ||
-           match(TokenType::NOT_EQUAL) ||
-           match(TokenType::LESS) ||
-           match(TokenType::GREATER) ||
-           match(TokenType::LESS_EQUAL) ||
-           match(TokenType::GREATER_EQUAL))
+    while (check(TokenType::PLUS) ||
+           check(TokenType::MINUS))
     {
-        term();
+        Token op = advance();
+        ExprPtr right = factor();
+        expr = make_unique<BinaryExpr>(move(expr), op, move(right));
     }
+
+    return expr;
 }
 
-void Parser::term()
+ExprPtr Parser::factor()
 {
-    factor();
+    ExprPtr expr = primary();
 
-    while (match(TokenType::PLUS) ||
-           match(TokenType::MINUS))
+    while (check(TokenType::MULTIPLY) ||
+           check(TokenType::DIVIDE))
     {
-        factor();
+        Token op = advance();
+        ExprPtr right = primary();
+        expr = make_unique<BinaryExpr>(move(expr), op, move(right));
     }
+
+    return expr;
 }
 
-void Parser::factor()
-{
-    primary();
-
-    while (match(TokenType::MULTIPLY) ||
-           match(TokenType::DIVIDE))
-    {
-        primary();
-    }
-}
-
-void Parser::primary()
+ExprPtr Parser::primary()
 {
     if (match(TokenType::NUMBER))
-        return;
+    {
+        Token token = previous();
+        bool isDecimal = token.value.find('.') != string::npos;
+        return make_unique<NumberExpr>(token.value, isDecimal);
+    }
 
     if (match(TokenType::STRING))
-        return;
+    {
+        return make_unique<StringExpr>(previous().value);
+    }
 
     if (match(TokenType::IDENTIFIER))
-        return;
+    {
+        return make_unique<VariableExpr>(previous().value);
+    }
 
     if (match(TokenType::LEFT_PAREN))
     {
-        expression();
+        ExprPtr expr = expression();
 
         consume(
             TokenType::RIGHT_PAREN,
             "Expected ')' after expression."
         );
 
-        return;
+        return make_unique<GroupingExpr>(move(expr));
     }
 
     error(
@@ -356,6 +386,10 @@ void Parser::primary()
     );
 
     synchronize();
+
+    // Return a harmless placeholder so the AST stays well-formed
+    // even after a syntax error, letting the parser keep going.
+    return make_unique<NumberExpr>("0", false);
 }
 
 void Parser::synchronize()

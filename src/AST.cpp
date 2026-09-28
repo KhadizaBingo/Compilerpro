@@ -3,6 +3,7 @@
 using namespace std;
 
 
+// ---------------- Expressions ----------------
 
 NumberExpr::NumberExpr(string value, bool isDecimal)
 {
@@ -33,7 +34,7 @@ GroupingExpr::GroupingExpr(ExprPtr inner)
 }
 
 
-//  Statements 
+// ---------------- Statements ----------------
 
 VarDeclStmt::VarDeclStmt(TokenType declaredType, string name, ExprPtr initializer)
 {
