@@ -1,0 +1,8 @@
+dhoro purno x = 10;
+
+jodi (x > 5) {
+    dekhao(x);
+}
+nahole {
+    dekhao(0);
+}

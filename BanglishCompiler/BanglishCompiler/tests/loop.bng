@@ -1,0 +1,6 @@
+dhoro purno x = 1;
+
+jotokkhon (x <= 10) {
+    dekhao(x);
+    x = x + 1;
+}

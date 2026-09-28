@@ -1,0 +1,7 @@
+dhoro purno x = 5;
+dhoro purno y = 3;
+jodi (x > y) {
+    dekhao("x is bigger");
+} nahole {
+    dekhao("y is bigger");
+}
